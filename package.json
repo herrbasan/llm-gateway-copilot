@@ -1,0 +1,68 @@
+{
+  "name": "llm-gateway-copilot",
+  "displayName": "LLM Gateway for Copilot Chat",
+  "description": "Use your LLM Gateway models in Copilot Chat — thinking effort control, reasoning display, tool calling.",
+  "version": "0.1.0",
+  "publisher": "herrbasan",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.116.0"
+  },
+  "categories": [
+    "AI",
+    "Chat",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "languageModelChatProviders": [
+      {
+        "vendor": "llm-gateway",
+        "displayName": "LLM Gateway"
+      }
+    ],
+    "commands": [
+      {
+        "command": "llm-gateway-copilot.setApiKey",
+        "title": "LLM Gateway: Set API Key"
+      },
+      {
+        "command": "llm-gateway-copilot.clearApiKey",
+        "title": "LLM Gateway: Clear API Key"
+      },
+      {
+        "command": "llm-gateway-copilot.refreshModels",
+        "title": "LLM Gateway: Refresh Models"
+      },
+      {
+        "command": "llm-gateway-copilot.showLogs",
+        "title": "LLM Gateway: Show Logs"
+      }
+    ],
+    "configuration": {
+      "title": "LLM Gateway",
+      "properties": {
+        "llm-gateway-copilot.baseUrl": {
+          "type": "string",
+          "default": "http://localhost:3400",
+          "description": "LLM Gateway base URL (no trailing slash)"
+        },
+        "llm-gateway-copilot.includeModels": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Only expose these gateway model IDs (empty = all chat models)"
+        },
+        "llm-gateway-copilot.excludeModels": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Hide these gateway model IDs"
+        }
+      }
+    }
+  }
+}

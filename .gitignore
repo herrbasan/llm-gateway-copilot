@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# VS Code extension packaging
+*.vsix
+.vscode-test/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Runtime/config
+.env
