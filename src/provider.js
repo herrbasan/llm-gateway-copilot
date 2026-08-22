@@ -156,10 +156,10 @@ module.exports = function createProvider(context) {
             name: 'LLM Gateway Error',
             family: 'llm-gateway',
             version: '1.0.0',
-            maxInputTokens: 0,
-            maxOutputTokens: 0,
+            maxInputTokens: 1,
+            maxOutputTokens: 1,
             isBYOK: true,
-            isUserSelectable: false,
+            isUserSelectable: true,
             capabilities: {},
             detail,
             statusIcon: new vscode.ThemeIcon('error'),
@@ -241,6 +241,9 @@ module.exports = function createProvider(context) {
     }
 
     async function provideLanguageModelChatResponse(modelInfo, messages, options, progress, token) {
+        if (modelInfo.id === 'llm-gateway.error') {
+            throw new Error('LLM Gateway is unreachable — check llm-gateway-copilot.baseUrl / baseUrlCandidates');
+        }
         const model = models.find((m) => m.id === modelInfo.id);
         if (!model) {
             throw new Error(`Model "${modelInfo.id}" not currently known — run "LLM Gateway: Refresh Models"`);
