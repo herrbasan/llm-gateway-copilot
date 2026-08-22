@@ -215,7 +215,7 @@ Activation also activates `github.copilot-chat` first, then fires refresh — Co
 | Usage reporting | Gateway sends a final usage chunk (`stream_options.include_usage`) and attaches `context` to the finish chunk. Not yet surfaced as `LanguageModelDataPart` (mime `usage`) for Copilot's context gauge. DeepSeek extension does this — copy the pattern. |
 | Fail-loud 401 / unreachable | Implemented — returns a non-selectable error model in the picker instead of an empty list. |
 | `.vscode/launch.json` | Add minimal `{ "type": "extensionHost", "request": "launch", "args": ["--extensionDevelopmentPath=${workspaceFolder}"] }` so F5 works out of the box. |
-| Packaging | `npx @vscode/vsce package` → `.vsix` → "Install from VSIX". Dev-only dependency. Add `.vscodeignore`. |
+| Packaging | `npx @vscode/vsce package` → `.vsix` → GitHub Release asset. `.vscodeignore` in place. |
 | `none` label | Dropdown label map: `none → 'Off'`. Already in place. |
 | `provideTokenCount` refinement | Could adopt adaptive chars-per-token EMA from usage data (DeepSeek pattern). Low priority. |
 

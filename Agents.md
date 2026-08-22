@@ -35,8 +35,28 @@ VS Code extension that puts LLM Gateway models into the GitHub Copilot Chat mode
 ## Development
 
 - Run: open this folder in VS Code, F5 (needs `.vscode/launch.json` — see spec §8 if missing).
-- Package: `npx @vscode/vsce package` (dev-only tool), install the `.vsix`.
 - Logs: Output channel "LLM Gateway Copilot" (`LLM Gateway: Show Logs`).
+
+## Packaging & Release
+
+No automated release pipeline. Releases are cut manually from a clean working copy.
+
+1. **Bump the version** in `package.json` following semver.
+2. **Package locally** with the dev-only tool (no `npm install` required):
+   ```
+   npx @vscode/vsce package
+   ```
+   This produces `llm-gateway-copilot-<version>.vsix` in the repo root, respecting `.vscodeignore`.
+3. **Create a GitHub release** at `https://github.com/herrbasan/llm-gateway-copilot/releases`.
+   - Tag the release (e.g. `v0.1.0`).
+   - Attach the `.vsix` as a release asset.
+   - Copy the relevant changelog notes into the release body.
+4. **User install** from the release:
+   - Download the `.vsix`.
+   - In VS Code: `Ctrl+Shift+P` → **Extensions: Install from VSIX...** → pick the file.
+   - Run `LLM Gateway: Set API Key` and pick a model in Copilot Chat.
+
+**Marketplace (optional, not required).** If you ever want the extension in the public VS Code Marketplace, create a publisher at https://marketplace.visualstudio.com/manage, get a Personal Access Token, run `npx vsce login <publisher>` and `npx vsce publish`. The same `.vsix` can also be published to Open VSX via `npx ovsx publish`.
 
 ## Coding rules for this repo
 

@@ -1,0 +1,14 @@
+.git
+.gitignore
+
+.vscode/
+!.vscode/launch.json
+
+node_modules/
+*.vsix
+
+README.md
+docs/
+
+*.log
+.env
