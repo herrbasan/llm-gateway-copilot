@@ -359,6 +359,7 @@ module.exports = function createProvider(context) {
         provideTokenCount,
         refresh,
         setApiKey,
+        setBaseUrl,
         clearApiKey,
         showLogs: () => log.show(),
         dispose: () => onChange.dispose(),
