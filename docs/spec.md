@@ -193,7 +193,7 @@ Activation also activates `github.copilot-chat` first, then fires refresh — Co
 
 3. **Dev host has separate SecretStorage.** The API key set in your main VS Code window is NOT available in the Extension Development Host. You must run Set API Key inside the dev host.
 
-4. **401 → ghost models.** On auth failure the extension currently logs a warning and returns `models = []`; Copilot then shows *stale cached* picker entries that can even chat fine (chat requests carry the key; the cache holds metadata). This is confusing — a fail-loud improvement (surface auth error on the model item, or return a single placeholder model with a warning icon) is planned but not implemented.
+4. **401 / unreachable → error model in the picker.** `provideLanguageModelChatInformation` now returns a single non-selectable `LLM Gateway Error` item with `statusIcon: 'error'` and the error detail when the gateway is unreachable, the fetch fails, or the response shape is wrong. This prevents Copilot from showing stale cached models. The underlying network boundary is still logged.
 
 5. **`'none'` means OFF and is opt-in per model.** The gateway router only honors `reasoning_effort: 'none'` when the model declares it in `thinkingLevels`; undeclared `'none'` is rounded UP to the cheapest declared level. Add `"none"` to a model's `thinkingLevels` in gateway `config.json` only when the adapter/upstream genuinely supports disabling thinking:
    - anthropic adapter: safe (→ `thinking: { type: 'disabled' }`). Done for kimi-k3-chat, kimi-k3-256k-chat, deepseek-chat, deepseek-flash-chat.
@@ -213,7 +213,7 @@ Activation also activates `github.copilot-chat` first, then fires refresh — Co
 | Gap | Notes |
 |---|---|
 | Usage reporting | Gateway sends a final usage chunk (`stream_options.include_usage`) and attaches `context` to the finish chunk. Not yet surfaced as `LanguageModelDataPart` (mime `usage`) for Copilot's context gauge. DeepSeek extension does this — copy the pattern. |
-| Fail-loud 401 | See gotcha #4. Surface auth failure in the picker instead of ghost cache. |
+| Fail-loud 401 / unreachable | Implemented — returns a non-selectable error model in the picker instead of an empty list. |
 | `.vscode/launch.json` | Add minimal `{ "type": "extensionHost", "request": "launch", "args": ["--extensionDevelopmentPath=${workspaceFolder}"] }` so F5 works out of the box. |
 | Packaging | `npx @vscode/vsce package` → `.vsix` → "Install from VSIX". Dev-only dependency. Add `.vscodeignore`. |
 | `none` label | Dropdown label map: `none → 'Off'`. Already in place. |

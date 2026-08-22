@@ -15,10 +15,9 @@ async function activate(context) {
 
     // Copilot Chat can serve cached model info without configurationSchema.
     // Activate it first so the refresh reaches a live listener.
-    try {
-        await vscode.extensions.getExtension('github.copilot-chat')?.activate();
-    } catch {
-        // Copilot Chat absent or not activatable — picker refresh may lag.
+    const copilot = vscode.extensions.getExtension('github.copilot-chat');
+    if (copilot) {
+        await copilot.activate();
     }
     provider.refresh();
 

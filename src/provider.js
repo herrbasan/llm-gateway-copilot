@@ -125,14 +125,34 @@ module.exports = function createProvider(context) {
         refresh();
     }
 
+    function makeErrorInfo(detail) {
+        return {
+            id: 'llm-gateway.error',
+            name: 'LLM Gateway Error',
+            family: 'llm-gateway',
+            version: '1.0.0',
+            maxInputTokens: 0,
+            maxOutputTokens: 0,
+            isBYOK: true,
+            isUserSelectable: false,
+            capabilities: {},
+            detail,
+            statusIcon: new vscode.ThemeIcon('error'),
+        };
+    }
+
     async function provideLanguageModelChatInformation() {
         const reachable = await ping();
+        if (!reachable) {
+            return [makeErrorInfo('Gateway unreachable — check llm-gateway-copilot.baseUrl')];
+        }
         try {
             const res = await gatewayFetch('/v1/models?type=chat', apiKey);
             const data = await res.json();
-            // Live shape: { object: 'list', data: [...] } — the type filter already
-            // narrowed it server-side. Array fallback for unfiltered local shapes.
-            const all = Array.isArray(data) ? data : (data.data ?? data.chat ?? []);
+            if (!data || typeof data !== 'object' || !Array.isArray(data.data)) {
+                throw new Error(`Unexpected /v1/models response shape: ${JSON.stringify(data).slice(0, 200)}`);
+            }
+            const all = data.data;
             const cfg = vscode.workspace.getConfiguration('llm-gateway-copilot');
             const include = cfg.get('includeModels', []);
             const exclude = new Set(cfg.get('excludeModels', []));
@@ -141,34 +161,39 @@ module.exports = function createProvider(context) {
                 : all.filter((m) => !exclude.has(m.id));
         } catch (err) {
             log.warn(`Model fetch failed: ${String(err)}`);
-            models = [];
+            return [makeErrorInfo(String(err))];
         }
-        return models.map((m) => toChatInfo(m, reachable));
+        return models.map((m) => toChatInfo(m));
     }
 
-    function toChatInfo(m, reachable) {
+    function toChatInfo(m) {
+        if (!m || typeof m.id !== 'string') {
+            throw new Error('toChatInfo: model missing required string id');
+        }
         const levels = m.capabilities?.thinkingLevels;
+        const maxInputTokens = m.maxInputTokens ?? m.contextWindow;
+        const maxOutputTokens = m.maxOutputTokens ?? m.capabilities?.maxOutputTokens;
+        if (typeof maxInputTokens !== 'number' || typeof maxOutputTokens !== 'number') {
+            throw new Error(`toChatInfo: model "${m.id}" missing maxInputTokens/contextWindow and/or maxOutputTokens`);
+        }
         const info = {
             id: m.id,
             name: m.prettyName || m.id,
             family: 'llm-gateway',
             version: '1.0.0',
-            maxInputTokens: m.maxInputTokens ?? m.contextWindow ?? 128000,
-            maxOutputTokens: m.maxOutputTokens ?? m.capabilities?.maxOutputTokens ?? 8192,
+            maxInputTokens,
+            maxOutputTokens,
             isBYOK: true,
             isUserSelectable: true,
             capabilities: {
-                toolCalling: Boolean(m.capabilities?.toolCalling ?? m.capabilities?.tools ?? true),
+                toolCalling: Boolean(m.capabilities?.toolCalling ?? m.capabilities?.tools),
                 imageInput: Boolean(m.capabilities?.vision),
             },
-            tooltip: `via LLM Gateway — ${m.owned_by}`,
+            tooltip: m.owned_by ? `via LLM Gateway — ${m.owned_by}` : 'via LLM Gateway',
         };
         if (!apiKey) {
             info.detail = 'Run "LLM Gateway: Set API Key"';
             info.statusIcon = new vscode.ThemeIcon('warning');
-        } else if (!reachable) {
-            info.detail = 'Gateway unreachable';
-            info.statusIcon = new vscode.ThemeIcon('debug-disconnect');
         }
         if (Array.isArray(levels) && levels.length > 0) {
             const labels = { none: 'Off', minimal: 'Minimal', low: 'Low', medium: 'Medium', high: 'High', xhigh: 'Extra High', max: 'Max' };
@@ -218,7 +243,7 @@ module.exports = function createProvider(context) {
         const toolAcc = new Map();
         const flushTools = () => {
             for (const acc of toolAcc.values()) {
-                progress.report(new vscode.LanguageModelToolCallPart(acc.id, acc.name, safeParse(acc.args)));
+                progress.report(new vscode.LanguageModelToolCallPart(acc.id, acc.name, JSON.parse(acc.args)));
             }
             toolAcc.clear();
         };
@@ -279,12 +304,3 @@ module.exports = function createProvider(context) {
         dispose: () => onChange.dispose(),
     };
 };
-
-function safeParse(json) {
-    try {
-        const parsed = JSON.parse(json);
-        return typeof parsed === 'object' && parsed !== null ? parsed : {};
-    } catch {
-        return {};
-    }
-}
