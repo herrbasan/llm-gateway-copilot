@@ -144,6 +144,23 @@ module.exports = function createProvider(context) {
         refresh();
     }
 
+    async function setBaseUrl() {
+        const current = configuredBaseUrl();
+        const entered = await vscode.window.showInputBox({
+            prompt: 'LLM Gateway base URL (no trailing slash)',
+            value: current,
+            ignoreFocusOut: true,
+        });
+        if (entered === undefined) return;
+        const url = entered.trim().replace(/\/+$/, '');
+        if (!/^https?:\/\//.test(url)) {
+            vscode.window.showErrorMessage('Invalid gateway URL — must start with http:// or https://');
+            return;
+        }
+        await vscode.workspace.getConfiguration('llm-gateway-copilot').update('baseUrl', url, vscode.ConfigurationTarget.Global);
+        log.info(`Gateway base URL set to ${url}`);
+    }
+
     async function clearApiKey() {
         await context.secrets.delete(API_KEY_SECRET);
         apiKey = undefined;

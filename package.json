@@ -2,7 +2,7 @@
   "name": "llm-gateway-copilot",
   "displayName": "LLM Gateway for Copilot Chat",
   "description": "Use your LLM Gateway models in Copilot Chat — thinking effort control, reasoning display, tool calling.",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "publisher": "herrbasan",
   "license": "MIT",
   "repository": {
@@ -32,6 +32,10 @@
       {
         "command": "llm-gateway-copilot.setApiKey",
         "title": "LLM Gateway: Set API Key"
+      },
+      {
+        "command": "llm-gateway-copilot.setBaseUrl",
+        "title": "LLM Gateway: Set Gateway URL"
       },
       {
         "command": "llm-gateway-copilot.clearApiKey",

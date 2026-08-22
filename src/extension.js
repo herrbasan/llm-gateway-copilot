@@ -7,6 +7,7 @@ async function activate(context) {
     context.subscriptions.push(
         provider,
         vscode.commands.registerCommand('llm-gateway-copilot.setApiKey', () => provider.setApiKey()),
+        vscode.commands.registerCommand('llm-gateway-copilot.setBaseUrl', () => provider.setBaseUrl()),
         vscode.commands.registerCommand('llm-gateway-copilot.clearApiKey', () => provider.clearApiKey()),
         vscode.commands.registerCommand('llm-gateway-copilot.refreshModels', () => provider.refresh()),
         vscode.commands.registerCommand('llm-gateway-copilot.showLogs', () => provider.showLogs()),
