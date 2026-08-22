@@ -8,7 +8,9 @@ const vscode = require('vscode');
 function toRole(role) {
     if (role === vscode.LanguageModelChatMessageRole.User) return 'user';
     if (role === vscode.LanguageModelChatMessageRole.Assistant) return 'assistant';
-    throw new Error(`toRole: unknown message role ${String(role)}`);
+    // Copilot Chat sends role values beyond the documented User/Assistant
+    // (observed: 3) for system-level context — map them to 'system'.
+    return 'system';
 }
 
 /** OpenAI messages from VS Code request messages. */

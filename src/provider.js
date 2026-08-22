@@ -191,6 +191,11 @@ module.exports = function createProvider(context) {
         return models.map((m) => toChatInfo(m));
     }
 
+    // Picker needs numeric limits to render; when the gateway doesn't
+    // declare them, substitute estimates — the gateway enforces real caps.
+    const DEFAULT_INPUT_TOKENS = 128000;
+    const DEFAULT_OUTPUT_TOKENS = 8192;
+
     function toChatInfo(m) {
         if (!m || typeof m.id !== 'string') {
             throw new Error('toChatInfo: model missing required string id');
@@ -199,15 +204,17 @@ module.exports = function createProvider(context) {
         const maxInputTokens = m.maxInputTokens ?? m.contextWindow;
         const maxOutputTokens = m.maxOutputTokens ?? m.capabilities?.maxOutputTokens;
         if (typeof maxInputTokens !== 'number' || typeof maxOutputTokens !== 'number') {
-            throw new Error(`toChatInfo: model "${m.id}" missing maxInputTokens/contextWindow and/or maxOutputTokens`);
+            // Undeclared limits are fine — the gateway/provider enforce real
+            // caps at runtime; the picker numbers are display-only.
+            log.debug(`Model "${m.id}" declares no token limits — using defaults (${DEFAULT_INPUT_TOKENS}/${DEFAULT_OUTPUT_TOKENS})`);
         }
         const info = {
             id: m.id,
             name: m.prettyName || m.id,
             family: 'llm-gateway',
             version: '1.0.0',
-            maxInputTokens,
-            maxOutputTokens,
+            maxInputTokens: typeof maxInputTokens === 'number' ? maxInputTokens : DEFAULT_INPUT_TOKENS,
+            maxOutputTokens: typeof maxOutputTokens === 'number' ? maxOutputTokens : DEFAULT_OUTPUT_TOKENS,
             isBYOK: true,
             isUserSelectable: true,
             capabilities: {
@@ -285,6 +292,14 @@ module.exports = function createProvider(context) {
             });
             for await (const chunk of sseChunks(res.body)) {
                 if (token.isCancellationRequested) return;
+                // Usage chunk (stream_options.include_usage): report it so
+                // Copilot's context gauge fills — mime 'usage', APIUsage shape.
+                if (chunk.usage && typeof chunk.usage.prompt_tokens === 'number') {
+                    progress.report(new vscode.LanguageModelDataPart(
+                        new TextEncoder().encode(JSON.stringify(chunk.usage)),
+                        'usage'
+                    ));
+                }
                 for (const choice of chunk.choices ?? []) {
                     const delta = choice.delta ?? choice.message;
                     if (delta?.reasoning_content) {
