@@ -61,6 +61,12 @@
           "items": { "type": "string" },
           "default": [],
           "description": "Hide these gateway model IDs"
+        },
+        "llm-gateway-copilot.baseUrlCandidates": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Fallback gateway base URLs to try when baseUrl is unreachable (no trailing slash)"
         }
       }
     }

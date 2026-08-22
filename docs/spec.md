@@ -61,6 +61,7 @@ llm-gateway-copilot/
 2. **No tokenizer dependency.** `provideTokenCount` estimates `chars/4` (+1020 per image part). The gateway does authoritative token estimation; the extension only needs a stable guess for Copilot's context gauge.
 3. **Feature-detection over version gates.** `LanguageModelThinkingPart` is a proposed API — the code checks `typeof vscode.LanguageModelThinkingPart === 'function'` instead of assuming.
 4. **Secrets in SecretStorage.** Key stored under `llm-gateway-copilot.apiKey`. Never in settings.json.
+5. **Roaming base URL.** `baseUrl` is the primary gateway; `baseUrlCandidates` is an ordered list of fallbacks. On refresh the extension pings them and uses the first reachable one, caching the result until the next refresh or settings change.
 
 ---
 
@@ -83,6 +84,7 @@ llm-gateway-copilot/
     ],
     "configuration": {
       "llm-gateway-copilot.baseUrl": "http://localhost:3400",
+      "llm-gateway-copilot.baseUrlCandidates": [],
       "llm-gateway-copilot.includeModels": [],
       "llm-gateway-copilot.excludeModels": []
     }
@@ -179,7 +181,7 @@ The extension sends `reasoning_effort`. The gateway router validates it against 
 | `LLM Gateway: Refresh Models` | Fire `onDidChangeLanguageModelChatInformation` |
 | `LLM Gateway: Show Logs` | Show the `LLM Gateway Copilot` output channel |
 
-Settings: `baseUrl` (default `http://localhost:3400`), `includeModels`, `excludeModels`. Changes to any `llm-gateway-copilot.*` setting trigger refresh.
+Settings: `baseUrl` (default `http://localhost:3400`), `baseUrlCandidates` (fallback URL list for roaming between networks), `includeModels`, `excludeModels`. Changes to any `llm-gateway-copilot.*` setting trigger refresh.
 
 Activation also activates `github.copilot-chat` first, then fires refresh — Copilot Chat can otherwise serve cached model info without `configurationSchema`.
 

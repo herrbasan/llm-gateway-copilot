@@ -9,9 +9,18 @@ const { toWireMessages, toWireTools, reportThinking } = require('./convert.js');
 const API_KEY_SECRET = 'llm-gateway-copilot.apiKey';
 const log = vscode.window.createOutputChannel('LLM Gateway Copilot', { log: true });
 
+let resolvedBaseUrl = null;
+
+function configuredBaseUrl() {
+    return vscode.workspace.getConfiguration('llm-gateway-copilot').get('baseUrl', 'http://localhost:3400').replace(/\/+$/, '');
+}
+
 function baseUrl() {
-    const raw = vscode.workspace.getConfiguration('llm-gateway-copilot').get('baseUrl', 'http://localhost:3400');
-    return raw.replace(/\/+$/, '');
+    return resolvedBaseUrl ?? configuredBaseUrl();
+}
+
+function invalidateBaseUrl() {
+    resolvedBaseUrl = null;
 }
 
 function authHeaders(key) {
@@ -37,13 +46,28 @@ async function errorBody(res) {
     }
 }
 
-async function ping() {
+async function pingUrl(url) {
     try {
-        const res = await fetch(`${baseUrl()}/health`, { signal: AbortSignal.timeout(3000) });
+        const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(3000) });
         return res.ok;
     } catch {
         return false;
     }
+}
+
+async function resolveBaseUrl() {
+    if (resolvedBaseUrl) return { url: resolvedBaseUrl, reachable: true };
+    const primary = configuredBaseUrl();
+    const candidates = vscode.workspace.getConfiguration('llm-gateway-copilot').get('baseUrlCandidates', []).map((u) => String(u).replace(/\/+$/, ''));
+    for (const url of [primary, ...candidates]) {
+        if (await pingUrl(url)) {
+            resolvedBaseUrl = url;
+            log.info(`Using gateway at ${resolvedBaseUrl}`);
+            return { url: resolvedBaseUrl, reachable: true };
+        }
+    }
+    log.warn(`No reachable gateway URL; falling back to ${primary}`);
+    return { url: primary, reachable: false };
 }
 
 /**
@@ -104,6 +128,7 @@ module.exports = function createProvider(context) {
     }
 
     function refresh() {
+        invalidateBaseUrl();
         onChange.fire();
     }
 
@@ -142,9 +167,9 @@ module.exports = function createProvider(context) {
     }
 
     async function provideLanguageModelChatInformation() {
-        const reachable = await ping();
+        const { url, reachable } = await resolveBaseUrl();
         if (!reachable) {
-            return [makeErrorInfo('Gateway unreachable — check llm-gateway-copilot.baseUrl')];
+            return [makeErrorInfo(`Gateway unreachable — ${url} (check llm-gateway-copilot.baseUrl / baseUrlCandidates)`)];
         }
         try {
             const res = await gatewayFetch('/v1/models?type=chat', apiKey);
