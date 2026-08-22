@@ -4,7 +4,7 @@ Central briefing for AI agents working on this codebase. Read `docs/spec.md` for
 
 ## What this is
 
-VS Code extension that puts LLM Gateway models into the GitHub Copilot Chat model picker via the stable `vscode.lm.registerLanguageModelChatProvider` API. Thin proxy: all model config, keys, routing, and thinking-effort normalization live in the gateway (`http://localhost:3400` by default). This extension only handles VS Code-side conversion and SSE streaming.
+VS Code extension that puts LLM Gateway models into the GitHub Copilot Chat model picker via the stable `vscode.lm.registerLanguageModelChatProvider` API. Thin proxy: all model config, keys, routing, and thinking-effort normalization live in the gateway (`http://192.168.0.100:3400` by default). This extension only handles VS Code-side conversion and SSE streaming.
 
 ## Non-negotiable constraints
 

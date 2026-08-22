@@ -10,7 +10,7 @@ The extension is a thin proxy: your gateway manages the models, API keys, and pr
 
 - VS Code 1.116 or newer
 - GitHub Copilot Chat
-- A running LLM Gateway (default: `http://localhost:3400`)
+- A running LLM Gateway (default: `http://192.168.0.100:3400`)
 
 ## Install
 
@@ -46,8 +46,8 @@ If your gateway runs on a different host/port, set `llm-gateway-copilot.baseUrl`
 
 | Setting | Default | Description |
 |---|---|---|
-| `llm-gateway-copilot.baseUrl` | `http://localhost:3400` | Primary gateway base URL |
-| `llm-gateway-copilot.baseUrlCandidates` | `[]` | Fallback URLs to try if `baseUrl` is unreachable (e.g. `http://192.168.0.100:3400`, `http://mcode.freeddns.org:3400`) |
+| `llm-gateway-copilot.baseUrl` | `http://192.168.0.100:3400` | Primary gateway base URL |
+| `llm-gateway-copilot.baseUrlCandidates` | `[]` | Fallback URLs to try if `baseUrl` is unreachable |
 | `llm-gateway-copilot.includeModels` | `[]` | Only expose these model IDs (empty = all chat models) |
 | `llm-gateway-copilot.excludeModels` | `[]` | Hide these model IDs |
 

@@ -12,7 +12,7 @@ const log = vscode.window.createOutputChannel('LLM Gateway Copilot', { log: true
 let resolvedBaseUrl = null;
 
 function configuredBaseUrl() {
-    return vscode.workspace.getConfiguration('llm-gateway-copilot').get('baseUrl', 'http://localhost:3400').replace(/\/+$/, '');
+    return vscode.workspace.getConfiguration('llm-gateway-copilot').get('baseUrl', 'http://192.168.0.100:3400').replace(/\/+$/, '');
 }
 
 function baseUrl() {

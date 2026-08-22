@@ -8,7 +8,7 @@
 
 ## 1. Purpose
 
-Expose LLM Gateway models inside the GitHub Copilot Chat model picker via VS Code's `LanguageModelChatProvider` API. The extension is a thin proxy: it does NOT implement provider API clients. The gateway (default `http://localhost:3400`) remains the single source of truth for model config, API keys, routing, thinking-effort normalization, and adapter translation.
+Expose LLM Gateway models inside the GitHub Copilot Chat model picker via VS Code's `LanguageModelChatProvider` API. The extension is a thin proxy: it does NOT implement provider API clients. The gateway (default `http://192.168.0.100:3400`) remains the single source of truth for model config, API keys, routing, thinking-effort normalization, and adapter translation.
 
 ### Why an extension instead of VS Code's built-in Custom Endpoint (BYOK)
 
@@ -83,7 +83,7 @@ llm-gateway-copilot/
       "llm-gateway-copilot.showLogs"
     ],
     "configuration": {
-      "llm-gateway-copilot.baseUrl": "http://localhost:3400",
+      "llm-gateway-copilot.baseUrl": "http://192.168.0.100:3400",
       "llm-gateway-copilot.baseUrlCandidates": [],
       "llm-gateway-copilot.includeModels": [],
       "llm-gateway-copilot.excludeModels": []
@@ -181,7 +181,7 @@ The extension sends `reasoning_effort`. The gateway router validates it against 
 | `LLM Gateway: Refresh Models` | Fire `onDidChangeLanguageModelChatInformation` |
 | `LLM Gateway: Show Logs` | Show the `LLM Gateway Copilot` output channel |
 
-Settings: `baseUrl` (default `http://localhost:3400`), `baseUrlCandidates` (fallback URL list for roaming between networks), `includeModels`, `excludeModels`. Changes to any `llm-gateway-copilot.*` setting trigger refresh.
+Settings: `baseUrl` (default `http://192.168.0.100:3400`), `baseUrlCandidates` (fallback URL list for roaming between networks), `includeModels`, `excludeModels`. Changes to any `llm-gateway-copilot.*` setting trigger refresh.
 
 Activation also activates `github.copilot-chat` first, then fires refresh — Copilot Chat can otherwise serve cached model info without `configurationSchema`.
 
