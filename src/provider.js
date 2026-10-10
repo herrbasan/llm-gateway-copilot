@@ -23,8 +23,21 @@ function invalidateBaseUrl() {
     resolvedBaseUrl = null;
 }
 
+// Identity on every gateway call. The gateway attaches these headers to its
+// failure and warning lines (LLM-Gateway src/utils/client-identity.js) — the
+// 2026-10 context-window bursts were unattributable precisely because this
+// extension's requests arrived as an anonymous "node" fetch. sessionId is the
+// VS Code window session, so the gateway can tell two windows apart.
+const { version: EXTENSION_VERSION } = require('../package.json');
+
 function authHeaders(key) {
-    return key ? { Authorization: `Bearer ${key}` } : {};
+    const headers = {
+        'X-Client-Name': 'llm-gateway-copilot',
+        'X-Client-Version': EXTENSION_VERSION,
+        'X-Session-Id': vscode.env.sessionId
+    };
+    if (key) headers['Authorization'] = `Bearer ${key}`;
+    return headers;
 }
 
 async function gatewayFetch(path, key, init) {
