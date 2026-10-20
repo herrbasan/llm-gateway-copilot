@@ -208,6 +208,8 @@ Activation also activates `github.copilot-chat` first, then fires refresh — Co
 
 7. **PowerShell 5.1 + curl/Invoke-RestMethod** mangles inline JSON and hangs on SSE endpoints. Use `Invoke-RestMethod` only on non-streaming endpoints (`/v1/models`, `/health`).
 
+8. **Tool-result images: delivery works, conversion was the bug.** VS Code delivers image parts inside `LanguageModelToolResultPart.content` to `registerLanguageModelChatProvider` providers as `LanguageModelDataPart` with an `image/*` mime — verified by code-reading the DeepSeek extension (`vizards.deepseek-v4-for-copilot` 0.9.4), which registers through the **same API** and whose vision pipeline consumes exactly these parts. The registration-mechanism hypothesis (upstream `microsoft/vscode#339600` / `#326276` — those cover other paths) was wrong; until 0.3.1 this extension simply dropped the parts in `toWireMessages`. Since 0.3.1 they go out as multipart `role:'tool'` content (`[{type:'text'},{type:'image_url'}]`, same wire shape as the DeepSeek extension; `' '` text placeholder for image-only results). The `request parts:` log line in `provideLanguageModelChatResponse` shows what arrived per turn. Remaining dependency: gateway adapters must translate multipart tool content per upstream (Anthropic `tool_result` image blocks etc.) — gateway-side, not here.
+
 ---
 
 ## 8. Current gaps / roadmap
@@ -234,3 +236,4 @@ Activation also activates `github.copilot-chat` first, then fires refresh — Co
 7. Agent mode task that triggers a tool call → tool roundtrip completes (exercises the ordering fix + flush-on-end).
 8. Cancel mid-stream → request aborts (gateway cancels upstream).
 9. Vision model + image attachment → image forwarded as data-URI.
+10. MCP tool returning an image (e.g. `view` on a PNG) → Output channel `request parts:` line shows `data:image/...` in the tool-result turn, and the model describes the image (multipart tool message, gotcha 7.8). If the data part is logged but the model still sees no image, the loss is gateway-side (adapter) — check the gateway log for that request.

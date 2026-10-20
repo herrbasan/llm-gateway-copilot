@@ -292,6 +292,14 @@ module.exports = function createProvider(context) {
             ? rawEffort
             : undefined;
 
+        // Probe for the tool-result image question (#2): record what part
+        // shapes the host actually delivered. If a tool-result turn shows no
+        // data:image parts here, VS Code dropped them before this provider.
+        const shapes = messages.map((m) => m.content.map((p) => (
+            p instanceof vscode.LanguageModelDataPart ? `data:${p.mimeType}` : p.constructor.name
+        )).join('+'));
+        log.info(`request parts: ${shapes.join(' | ')}`);
+
         const body = {
             model: model.id,
             messages: toWireMessages(messages),

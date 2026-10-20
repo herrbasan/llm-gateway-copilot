@@ -35,13 +35,17 @@ function toWireMessages(messages) {
                 });
             } else if (part instanceof vscode.LanguageModelToolResultPart) {
                 let resultText = '';
+                const resultImages = [];
                 for (const item of part.content) {
-                    if (item instanceof vscode.LanguageModelTextPart) resultText += item.value;
+                    if (item instanceof vscode.LanguageModelTextPart) {
+                        resultText += item.value;
+                    } else if (isImagePart(item)) {
+                        resultImages.push(imagePartToWire(item));
+                    }
                 }
-                toolResults.push({ callId: part.callId, content: resultText });
+                toolResults.push({ callId: part.callId, content: resultText, images: resultImages });
             } else if (isImagePart(part)) {
-                const b64 = Buffer.from(part.data).toString('base64');
-                images.push({ type: 'image_url', image_url: { url: `data:${part.mimeType};base64,${b64}` } });
+                images.push(imagePartToWire(part));
             } else if (isThinkingPart(part)) {
                 reasoning += part.value;
             }
@@ -62,7 +66,12 @@ function toWireMessages(messages) {
             out.push(msg);
         }
         for (const tr of toolResults) {
-            out.push({ role: 'tool', tool_call_id: tr.callId, content: tr.content });
+            // OpenAI wire format allows image_url parts inside role:'tool'
+            // messages — a text part rides along so `text` is never absent.
+            const content = tr.images.length > 0
+                ? [{ type: 'text', text: tr.content || ' ' }, ...tr.images]
+                : tr.content;
+            out.push({ role: 'tool', tool_call_id: tr.callId, content });
         }
     }
     return out;
@@ -80,6 +89,11 @@ function toWireTools(tools) {
 function isImagePart(part) {
     return part instanceof vscode.LanguageModelDataPart && typeof part.mimeType === 'string'
         && part.mimeType.startsWith('image/');
+}
+
+function imagePartToWire(part) {
+    const b64 = Buffer.from(part.data).toString('base64');
+    return { type: 'image_url', image_url: { url: `data:${part.mimeType};base64,${b64}` } };
 }
 
 // LanguageModelThinkingPart is proposed — feature-detect instead of assuming.
