@@ -306,6 +306,10 @@ module.exports = function createProvider(context) {
         const shapes = messages.map((m) => m.content.map(shapeOf).join('+'));
         log.info(`request parts: ${shapes.join(' | ')}`);
 
+        const wireSummary = (msgs) => msgs.map((m) => `${m.role}[${Array.isArray(m.content)
+            ? m.content.map((p) => (p.type === 'image_url' ? `img(${p.image_url.url.length})` : p.type)).join(',')
+            : `str(${String(m.content).length})`}]`).join(' | ');
+
         const body = {
             model: model.id,
             messages: toWireMessages(messages),
@@ -314,6 +318,7 @@ module.exports = function createProvider(context) {
         if (effort) body.reasoning_effort = effort;
         const tools = toWireTools(options.tools);
         if (tools.length > 0) body.tools = tools;
+        log.info(`wire: ${wireSummary(body.messages)}`);
 
         const controller = new AbortController();
         token.onCancellationRequested(() => controller.abort());
