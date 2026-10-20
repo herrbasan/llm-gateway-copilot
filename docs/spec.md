@@ -212,7 +212,9 @@ Activation also activates `github.copilot-chat` first, then fires refresh — Co
 
    **Wire shape matters.** OpenAI-compatible APIs reject image parts on `role:'tool'` ("Image URLs are only allowed for messages with role 'user'", openai/openai-openapi#523) — 0.3.1 emitted exactly that and was rejected/ignored upstream. Since **0.3.2** the tool message stays text-only (with a placeholder when the result had no text) and the image rides in a **`user` message immediately after it**, labelled with the `tool_call_id`. This matches the documented workaround and the known-good pasted-image path; the DeepSeek extension's in-tool shape is aimed at its own backend, not the OpenAI wire.
 
-   The `request parts:` log line in `provideLanguageModelChatResponse` prints part shapes **including nested tool-result parts** (`ToolResult[text,data:image/png]`), so delivery vs conversion is decidable from one line.
+   The `request parts:` log line in `provideLanguageModelChatResponse` prints part shapes **including nested tool-result parts** (`ToolResult[text,data:image/png]`), so delivery vs conversion is decidable from one line. The `wire:` line prints what actually goes out (`user[text,img(62442)]`), so conversion vs transport is decidable from the next.
+
+   **Verified end-to-end 2026-10-20 on 0.3.3** (`deepseek-flash-chat`, anthropic adapter): `view` on a 1454×458 PNG produced `request parts: ... | ToolResult[wn,data:image/png] | ...` and `wire: ... | tool[str(31)] | user[text,img(62442)] | ...`, and the model described the screenshot correctly. The gateway's anthropic adapter also accepts image parts inside `role:'tool'` content (replayed directly against `:3400`), so the user-message shape is chosen for OpenAI-wire correctness, not because it is the only shape that works. Consequence for diagnosis: a missing image is only ever two things — absent `data:image/*` in `request parts:` (VS Code never delivered it) or absent `img(...)` in `wire:` (our conversion dropped it). Never conclude from a log file read mid-turn: the channel is written per request, so re-check its mtime after the turn.
 
 ---
 
@@ -240,4 +242,4 @@ Activation also activates `github.copilot-chat` first, then fires refresh — Co
 7. Agent mode task that triggers a tool call → tool roundtrip completes (exercises the ordering fix + flush-on-end).
 8. Cancel mid-stream → request aborts (gateway cancels upstream).
 9. Vision model + image attachment → image forwarded as data-URI.
-10. MCP tool returning an image (e.g. `view` on a PNG) → Output channel `request parts:` line shows `ToolResult[...data:image/...]` for the tool-result turn, and the model describes the image (tool text + following `user` message carrying the image, gotcha 7.8). If the data part is absent from that line, VS Code never handed the image to the provider — nothing to fix here.
+10. MCP tool or `view` returning an image (e.g. `view` on a PNG) → the tool-result turn's `request parts:` line shows `ToolResult[...data:image/...]`, the matching `wire:` line shows `tool[str(n)] | user[text,img(n)]`, and the model describes the image. Absent `data:image/*` in `request parts:` → VS Code never handed it to the provider (nothing to fix here). Absent `img(...)` in `wire:` → conversion bug (gotcha 7.8).
