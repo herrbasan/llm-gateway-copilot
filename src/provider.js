@@ -293,11 +293,17 @@ module.exports = function createProvider(context) {
             : undefined;
 
         // Probe for the tool-result image question (#2): record what part
-        // shapes the host actually delivered. If a tool-result turn shows no
-        // data:image parts here, VS Code dropped them before this provider.
-        const shapes = messages.map((m) => m.content.map((p) => (
-            p instanceof vscode.LanguageModelDataPart ? `data:${p.mimeType}` : p.constructor.name
-        )).join('+'));
+        // shapes the host actually delivered, including nested tool-result
+        // parts. If a tool-result turn shows no data:image here, VS Code never
+        // handed the image to this provider.
+        const shapeOf = (p) => {
+            if (p instanceof vscode.LanguageModelDataPart) return `data:${p.mimeType}`;
+            if (p instanceof vscode.LanguageModelToolResultPart) {
+                return `ToolResult[${p.content.map(shapeOf).join(',')}]`;
+            }
+            return p.constructor.name;
+        };
+        const shapes = messages.map((m) => m.content.map(shapeOf).join('+'));
         log.info(`request parts: ${shapes.join(' | ')}`);
 
         const body = {

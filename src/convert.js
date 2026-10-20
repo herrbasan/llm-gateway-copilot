@@ -66,12 +66,22 @@ function toWireMessages(messages) {
             out.push(msg);
         }
         for (const tr of toolResults) {
-            // OpenAI wire format allows image_url parts inside role:'tool'
-            // messages — a text part rides along so `text` is never absent.
-            const content = tr.images.length > 0
-                ? [{ type: 'text', text: tr.content || ' ' }, ...tr.images]
-                : tr.content;
-            out.push({ role: 'tool', tool_call_id: tr.callId, content });
+            // OpenAI-compatible APIs reject image parts on role:'tool' —
+            // only user messages may carry images (openai/openai-openapi#523).
+            // The image therefore rides in a user message right after its
+            // tool message; the tool message stays text-only so the
+            // tool_call_id contract is still satisfied.
+            out.push({
+                role: 'tool',
+                tool_call_id: tr.callId,
+                content: tr.content || (tr.images.length > 0 ? 'Image returned by tool — attached in the following message.' : ''),
+            });
+            if (tr.images.length > 0) {
+                out.push({
+                    role: 'user',
+                    content: [{ type: 'text', text: `Image returned by tool result ${tr.callId}:` }, ...tr.images],
+                });
+            }
         }
     }
     return out;
